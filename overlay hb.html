@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Air06 Handball - Overlay Scoring OBS</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap');
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Montserrat', sans-serif;
+    }
+
+    body {
+      background-color: transparent;
+      overflow: hidden;
+      width: 1920px;
+      height: 1080px;
+      position: relative;
+    }
+
+    /* CONTENEUR PRINCIPAL À GAUCHE */
+    .scoreboard-container {
+      position: absolute;
+      top: 25px;
+      left: 25px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      width: max-content;
+    }
+
+    /* BARRE PRINCIPALE DU SCORE */
+    .main-bar {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background: #05070a;
+      border-bottom: 4px solid #ff0000;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.85);
+      overflow: hidden;
+      color: white;
+      height: 75px;
+    }
+
+    /* FILIGRANE AIR06 */
+    .main-bar-bg-logo {
+      position: absolute;
+      top: 50%;
+      left: 42%;
+      transform: translate(-50%, -50%);
+      font-size: 80px;
+      font-weight: 900;
+      color: rgba(255, 255, 255, 0.05);
+      letter-spacing: 12px;
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 1;
+      user-select: none;
+    }
+
+    .bar-content {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      height: 100%;
+    }
+
+    /* CLUBS DOMICILE ET EXTÉRIEUR */
+    .team-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 18px;
+      width: 310px;
+    }
+
+    .team-section.home {
+      justify-content: flex-end;
+      text-align: right;
+    }
+
+    .team-section.away {
+      justify-content: flex-start;
+      text-align: left;
+    }
+
+    .team-logo {
+      width: 48px;
+      height: 48px;
+      object-fit: contain;
+    }
+
+    .team-name {
+      font-size: 19px;
+      font-weight: 800;
+      text-transform: uppercase;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      letter-spacing: 1px;
+    }
+
+    /* BLOCS DE SCORE */
+    .score-box {
+      background: #0f172a;
+      padding: 0 20px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 42px;
+      font-weight: 900;
+      color: #ffffff;
+      min-width: 70px;
+    }
+
+    /* CHRONO */
+    .chrono-box {
+      background: #000000;
+      padding: 0 22px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      font-weight: 900;
+      color: #ffffff;
+      min-width: 130px;
+      border-left: 2px solid rgba(255,255,255,0.15);
+      border-right: 2px solid rgba(255,255,255,0.15);
+    }
+
+    /* BLOC LOGO AIR06 À DROITE */
+    .air06-box {
+      background: #ff0000;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 16px;
+      border-left: 2px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .air06-box img {
+      height: 48px;
+      max-width: 95px;
+      object-fit: contain;
+    }
+
+    /* ZONE DES 2 MINUTES */
+    .penalties-container {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      margin-top: 10px;
+      padding: 0 5px;
+    }
+
+    .penalty-col {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      width: 330px;
+    }
+
+    .penalty-col.away {
+      align-items: flex-end;
+    }
+
+    .penalty-badge {
+      background: rgba(5, 7, 10, 0.94);
+      border-left: 4px solid #ef4444;
+      color: white;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 15px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+      width: 100%;
+    }
+
+    .penalty-col.away .penalty-badge {
+      border-left: none;
+      border-right: 4px solid #ef4444;
+    }
+
+    .txt-red-2min {
+      color: #ef4444;
+      font-weight: 900;
+      font-size: 17px;
+      letter-spacing: 1px;
+    }
+
+    .player-name {
+      color: #f8fafc;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .penalty-timer {
+      color: #facc15;
+      font-weight: 900;
+      font-size: 17px;
+      font-family: monospace;
+    }
+
+    /* JET DE 7M */
+    .jet7m-badge {
+      margin-top: 10px;
+      background: #f59e0b;
+      color: #000;
+      padding: 8px 24px;
+      border-radius: 20px;
+      font-weight: 900;
+      font-size: 20px;
+      letter-spacing: 2px;
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.8);
+      animation: flash7m 0.6s infinite alternate;
+      display: none;
+    }
+
+    /* ANIMATION OVERLAY ET BUT */
+    .overlay-modal {
+      position: absolute;
+      top: 55%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(5, 7, 10, 0.96);
+      border: 5px solid #ff0000;
+      border-radius: 20px;
+      padding: 35px 70px;
+      display: none;
+      flex-direction: row;
+      align-items: center;
+      gap: 35px;
+      box-shadow: 0 0 60px rgba(0,0,0,0.9);
+      z-index: 100;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .overlay-modal.active {
+      display: flex;
+      animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .overlay-modal.blink-mode {
+      animation: goalBlink 0.6s infinite alternate;
+    }
+
+    .modal-logo {
+      width: 120px;
+      height: 120px;
+      object-fit: contain;
+    }
+
+    .modal-text {
+      font-size: 60px;
+      font-weight: 900;
+      color: #ffffff;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      text-align: center;
+    }
+
+    @keyframes goalBlink {
+      0% { opacity: 0.3; transform: translate(-50%, -50%) scale(0.96); }
+      100% { opacity: 1; transform: translate(-50%, -50%) scale(1.04); }
+    }
+
+    @keyframes flash7m {
+      0% { opacity: 0.3; transform: scale(0.95); }
+      100% { opacity: 1; transform: scale(1.05); }
+    }
+
+    @keyframes popIn {
+      from { opacity: 0; transform: translate(-50%, -60%) scale(0.8); }
+      to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="scoreboard-container">
+    <div class="main-bar">
+      <div class="main-bar-bg-logo">AIR06</div>
+
+      <div class="bar-content">
+        <!-- DOMICILE -->
+        <div class="team-section home">
+          <img id="home-logo" class="team-logo" src="" alt="" style="display:none;">
+          <span class="team-name" id="home-name">DOMICILE</span>
+        </div>
+
+        <!-- SCORE DOMICILE -->
+        <div class="score-box" id="score-home">0</div>
+
+        <!-- CHRONO -->
+        <div class="chrono-box" id="chrono-display">00:00</div>
+
+        <!-- SCORE EXTÉRIEUR -->
+        <div class="score-box" id="score-away">0</div>
+
+        <!-- EXTÉRIEUR -->
+        <div class="team-section away">
+          <span class="team-name" id="away-name">EXTÉRIEUR</span>
+          <img id="away-logo" class="team-logo" src="" alt="" style="display:none;">
+        </div>
+
+        <!-- LOGO AIR06 À DROITE -->
+        <div class="air06-box">
+          <img id="air06-logo-img" src="logo-air06.png" alt="Air06">
+        </div>
+      </div>
+    </div>
+
+    <!-- ZONE DES 2 MINUTES -->
+    <div class="penalties-container">
+      <div class="penalty-col home" id="penalties-home-list"></div>
+      <div class="penalty-col away" id="penalties-away-list"></div>
+    </div>
+
+    <!-- JET DE 7M -->
+    <div class="jet7m-badge" id="jet7m-badge">🤾 JET DE 7M</div>
+  </div>
+
+  <!-- MODAL ANIMATIONS ET BUTS -->
+  <div class="overlay-modal" id="overlay-modal">
+    <img class="modal-logo" id="modal-logo-left" src="" alt="" style="display:none;">
+    <div class="modal-text" id="modal-text">BUT !</div>
+    <img class="modal-logo" id="modal-logo-right" src="" alt="" style="display:none;">
+  </div>
+
+  <script>
+    const channel = new BroadcastChannel('air06_handball');
+
+    // Gestion du logo Air06 avec plusieurs chemins de secours
+    const air06Img = document.getElementById('air06-logo-img');
+    if (air06Img) {
+      air06Img.onerror = function() {
+        if (this.src.includes('logo-air06.png')) {
+          this.src = 'logo air06.png';
+        } else if (this.src.includes('logo%20air06.png') || this.src.includes('logo air06.png')) {
+          this.src = 'clubs/logo-air06.png';
+        } else {
+          this.style.display = 'none';
+        }
+      };
+    }
+
+    function updateImage(imgId, logoPath) {
+      const img = document.getElementById(imgId);
+      if (!img) return;
+
+      if (logoPath && logoPath.trim() !== '') {
+        // Encodage propre des espaces dans les chemins
+        const cleanPath = encodeURI(logoPath.trim());
+        
+        img.onerror = function() {
+          this.style.display = 'none';
+        };
+
+        img.onload = function() {
+          this.style.display = 'block';
+        };
+
+        img.src = cleanPath;
+        if (img.complete && img.naturalWidth > 0) {
+          img.style.display = 'block';
+        }
+      } else {
+        img.style.display = 'none';
+      }
+    }
+
+    function handleUpdate(data) {
+      if (!data) return;
+
+      document.getElementById('home-name').textContent = data.homeName || 'DOMICILE';
+      document.getElementById('away-name').textContent = data.awayName || 'EXTÉRIEUR';
+      document.getElementById('score-home').textContent = data.homeScore ?? 0;
+      document.getElementById('score-away').textContent = data.awayScore ?? 0;
+      document.getElementById('chrono-display').textContent = data.chronoText || '00:00';
+
+      updateImage('home-logo', data.homeLogo);
+      updateImage('away-logo', data.awayLogo);
+
+      const homeList = document.getElementById('penalties-home-list');
+      homeList.innerHTML = '';
+      if (data.penaltiesHome) {
+        data.penaltiesHome.forEach(p => {
+          const badge = document.createElement('div');
+          badge.className = 'penalty-badge';
+          badge.innerHTML = `
+            <span class="txt-red-2min">2 MIN</span>
+            <span class="player-name">${p.player}</span>
+            <span class="penalty-timer">${p.formatted}</span>
+          `;
+          homeList.appendChild(badge);
+        });
+      }
+
+      const awayList = document.getElementById('penalties-away-list');
+      awayList.innerHTML = '';
+      if (data.penaltiesAway) {
+        data.penaltiesAway.forEach(p => {
+          const badge = document.createElement('div');
+          badge.className = 'penalty-badge';
+          badge.innerHTML = `
+            <span class="txt-red-2min">2 MIN</span>
+            <span class="player-name">${p.player}</span>
+            <span class="penalty-timer">${p.formatted}</span>
+          `;
+          awayList.appendChild(badge);
+        });
+      }
+
+      document.getElementById('jet7m-badge').style.display = data.jet7mActive ? 'block' : 'none';
+
+      const modal = document.getElementById('overlay-modal');
+      const modalText = document.getElementById('modal-text');
+
+      if (data.activeModal) {
+        modalText.textContent = data.activeModal.text;
+        
+        const clubColor = data.activeModal.color || '#ff0000';
+        modal.style.borderColor = clubColor;
+        modal.style.boxShadow = `0 0 50px ${clubColor}`;
+        modalText.style.textShadow = `0 0 20px ${clubColor}`;
+
+        updateImage('modal-logo-left', data.activeModal.logo);
+        updateImage('modal-logo-right', data.activeModal.logo);
+        modal.classList.add('active');
+
+        if (data.activeModal.isGoal) {
+          modal.classList.add('blink-mode');
+        } else {
+          modal.classList.remove('blink-mode');
+        }
+      } else {
+        modal.classList.remove('active', 'blink-mode');
+      }
+    }
+
+    channel.onmessage = (event) => {
+      if (event.data && event.data.type === 'UPDATE_ALL') {
+        handleUpdate(event.data);
+      }
+    };
+
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'air06_handball_state' && e.newValue) {
+        try {
+          handleUpdate(JSON.parse(e.newValue));
+        } catch (err) {}
+      }
+    });
+
+    window.addEventListener('DOMContentLoaded', () => {
+      channel.postMessage({ type: 'REQUEST_SYNC' });
+      const savedState = localStorage.getItem('air06_handball_state');
+      if (savedState) {
+        try { handleUpdate(JSON.parse(savedState)); } catch(e) {}
+      }
+    });
+  </script>
+</body>
+</html>

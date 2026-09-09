@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Panneau de Contrôle - Air06 Handball</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Segoe+UI:wght@600;800;900&display=swap');
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      color: #e11d48;
+      margin-bottom: 20px;
+      font-size: 28px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: #1e293b;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+      border: 1px solid #334155;
+    }
+
+    .full-width { grid-column: span 2; }
+
+    label { display: block; margin-top: 8px; font-size: 13px; color: #94a3b8; font-weight: 800; }
+    
+    select, input {
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: #fff;
+      font-size: 15px;
+      width: 100%;
+      margin-top: 4px;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    button:active { transform: scale(0.96); }
+
+    .btn-score-add { background: #10b981; color: white; font-size: 16px; padding: 15px; }
+    .btn-score-sub { background: #475569; color: white; max-width: 80px; }
+    .btn-2min { background: #f59e0b; color: #000; }
+    .btn-timeout { background: #8b5cf6; color: white; }
+    .btn-yellow { background: #eab308; color: #000; }
+    .btn-red { background: #dc2626; color: white; }
+    .btn-jet7m { background: #ec4899; color: white; }
+    .btn-jet7m.active { background: #be185d; border: 2px solid #fff; }
+    .btn-reset { background: #ef4444; color: white; }
+
+    .ctrl-score-display {
+      font-size: 44px;
+      font-weight: 900;
+      text-align: center;
+      margin: 10px 0;
+      color: #ffffff; /* SCORE DU PANNEAU EN BLANC */
+    }
+
+    .chrono-display {
+      font-size: 48px;
+      font-weight: 900;
+      color: #facc15;
+      text-align: center;
+      margin: 10px 0;
+      letter-spacing: 2px;
+    }
+
+    .chrono-controls {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .manual-time-box {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #334155;
+    }
+
+    .player-action-box {
+      background: #0f172a;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 12px;
+      border: 1px solid #334155;
+    }
+
+    .penalties-list {
+      margin-top: 10px;
+      font-size: 13px;
+    }
+
+    .penalty-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #334155;
+      padding: 6px 12px;
+      border-radius: 6px;
+      margin-top: 5px;
+    }
+
+    .btn-del {
+      background: #ef4444;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🤾 Régie Handball Air06</h1>
+
+  <div class="grid">
+
+    <!-- CHOIX DES CLUBS -->
+    <div class="card full-width">
+      <h3 style="color: #94a3b8;">Sélecteur de Clubs</h3>
+      <div style="display: flex; gap: 20px;">
+        <div style="flex: 1;">
+          <label>Club Domicile</label>
+          <select id="select-home" onchange="updateTeams()"></select>
+        </div>
+        <div style="flex: 1;">
+          <label>Club Extérieur</label>
+          <select id="select-away" onchange="updateTeams()"></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHRONOMÈTRE -->
+    <div class="card full-width">
+      <h3 style="color: #94a3b8;">Chronomètre de Match</h3>
+      <div class="chrono-display" id="ctrl-chrono">00:00</div>
+      
+      <div class="chrono-controls">
+        <button onclick="toggleChrono()" id="btn-start" style="background: #22c55e; color: white;">START / PAUSE</button>
+        <button onclick="setChronoTime(30, 0)" style="background: #3b82f6; color: white;">30 MIN (2E MI-TEMPS)</button>
+        <button class="btn-reset" onclick="resetChrono()">REMISE À 0 CHRONO</button>
+      </div>
+
+      <div class="manual-time-box">
+        <span style="color: #94a3b8; font-size: 14px;">Réglage manuel :</span>
+        <input type="number" id="manual-min" placeholder="Min" style="width: 70px; text-align: center;" value="0" min="0">
+        <span style="font-weight: bold;">:</span>
+        <input type="number" id="manual-sec" placeholder="Sec" style="width: 70px; text-align: center;" value="0" min="0" max="59">
+        <button onclick="applyManualTime()" style="background: #475569; color: white; flex: 0 0 auto; padding: 10px 15px;">Appliquer</button>
+      </div>
+    </div>
+
+    <!-- GESTION DU SCORE ET REMISE À ZERO -->
+    <div class="card full-width" style="display: flex; justify-content: space-between; align-items: center; background: #0f172a;">
+      <span style="font-weight: 800; color: #94a3b8;">GESTION DES SCORES</span>
+      <button class="btn-reset" style="flex: 0 0 auto; padding: 10px 20px;" onclick="resetScores()">REMISE À 0 DES SCORES</button>
+    </div>
+
+    <!-- DOMICILE -->
+    <div class="card">
+      <h2 id="title-home" style="color: #60a5fa; text-transform: uppercase;">DOMICILE</h2>
+      <div class="ctrl-score-display" id="ctrl-score-home">0</div>
+      
+      <!-- BOUTONS SCORE DOMICILE (+1 DÉCLENCHE L'ANIMATION AUTOMATIQUE) -->
+      <div class="btn-group">
+        <button class="btn-score-add" onclick="changeScore('home', 1)">⚽ +1 BUT DOMICILE</button>
+        <button class="btn-score-sub" onclick="changeScore('home', -1)">-1</button>
+      </div>
+
+      <button class="btn-timeout" style="width: 100%; margin-top: 10px;" onclick="triggerTimeout('home')">⏱ TEMPS MORT DOMICILE (30 SEC)</button>
+
+      <!-- GESTION JOUEURS DOMICILE -->
+      <div class="player-action-box">
+        <label>Nom ou N° du joueur Domicile :</label>
+        <input type="text" id="player-home" placeholder="Ex: N°7 Dupont">
+        
+        <div class="btn-group">
+          <button class="btn-2min" onclick="add2Min('home')">+ 2 MIN</button>
+          <button class="btn-yellow" onclick="triggerCard('home', 'yellow')">🟨 JAUNE</button>
+          <button class="btn-red" onclick="triggerCard('home', 'red')">🟥 ROUGE</button>
+        </div>
+      </div>
+
+      <div class="penalties-list" id="ctrl-penalties-home"></div>
+    </div>
+
+    <!-- EXTÉRIEUR -->
+    <div class="card">
+      <h2 id="title-away" style="color: #f43f5e; text-transform: uppercase;">EXTÉRIEUR</h2>
+      <div class="ctrl-score-display" id="ctrl-score-away">0</div>
+
+      <!-- BOUTONS SCORE EXTÉRIEUR (+1 DÉCLENCHE L'ANIMATION AUTOMATIQUE) -->
+      <div class="btn-group">
+        <button class="btn-score-add" onclick="changeScore('away', 1)">⚽ +1 BUT EXTÉRIEUR</button>
+        <button class="btn-score-sub" onclick="changeScore('away', -1)">-1</button>
+      </div>
+
+      <button class="btn-timeout" style="width: 100%; margin-top: 10px;" onclick="triggerTimeout('away')">⏱ TEMPS MORT EXTÉRIEUR (30 SEC)</button>
+
+      <!-- GESTION JOUEURS EXTÉRIEUR -->
+      <div class="player-action-box">
+        <label>Nom ou N° du joueur Extérieur :</label>
+        <input type="text" id="player-away" placeholder="Ex: N°10 Martin">
+        
+        <div class="btn-group">
+          <button class="btn-2min" onclick="add2Min('away')">+ 2 MIN</button>
+          <button class="btn-yellow" onclick="triggerCard('away', 'yellow')">🟨 JAUNE</button>
+          <button class="btn-red" onclick="triggerCard('away', 'red')">🟥 ROUGE</button>
+        </div>
+      </div>
+
+      <div class="penalties-list" id="ctrl-penalties-away"></div>
+    </div>
+
+    <!-- ACTIONS GLOBALES -->
+    <div class="card full-width">
+      <h3 style="color: #94a3b8;">Actions de Jeu</h3>
+      <div class="btn-group">
+        <button class="btn-jet7m" id="btn-jet7m" onclick="toggleJet7m()">🤾 JET DE 7M (CLIGNOTANT)</button>
+        <button class="btn-reset" onclick="clearModal()">EFFACER ANIMATION OVERLAY</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const CLUBS = [
+      { name: "BHB BILLÈRE", logo: "clubs/logo-billiere-hbp.png" },
+      { name: "BRUGES 33", logo: "clubs/logo-bruges33.png" },
+      { name: "CAVIGAL NICE", logo: "clubs/logo-cavigal-nice-hb.png" },
+      { name: "GRAND LIBOURNE", logo: "clubs/logo-ent-grand-libournais-handball.png" },
+      { name: "FENIX TOULOUSE", logo: "clubs/logo-Fenix_Toulouse_Handball_2.png" },
+      { name: "GFCA AJACCIO", logo: "clubs/logo-gfca-hb.png" },
+      { name: "MONTPELLIER HB", logo: "clubs/logo-montpellier-hb.png" },
+      { name: "PAUC AIX", logo: "clubs/logo-pays-aix-universite-hb.png" },
+      { name: "ROC AVEYRON", logo: "clubs/logo-roc-aveyron-hb.png" },
+      { name: "ST-RAPHAËL VHB", logo: "clubs/logo-SaintRaphaelVarHandball-2024.png" },
+      { name: "US CRAUROISE", logo: "clubs/logo-us-crauroise.png" },
+      { name: "USAM NÎMES", logo: "clubs/nimes_logo_2023-2024.png" }
+    ];
+
+    const channel = new BroadcastChannel('air06_handball');
+    let modalTimeout = null;
+
+    let state = {
+      homeName: "",
+      homeLogo: "",
+      awayName: "",
+      awayLogo: "",
+      homeScore: 0,
+      awayScore: 0,
+      chronoSeconds: 0,
+      chronoRunning: false,
+      penaltiesHome: [],
+      penaltiesAway: [],
+      jet7mActive: false,
+      activeModal: null
+    };
+
+    channel.onmessage = (event) => {
+      if (event.data && event.data.type === 'REQUEST_SYNC') {
+        sync();
+      }
+    };
+
+    window.onload = () => {
+      const selectHome = document.getElementById('select-home');
+      const selectAway = document.getElementById('select-away');
+
+      CLUBS.forEach((c, idx) => {
+        selectHome.add(new Option(c.name, idx));
+        selectAway.add(new Option(c.name, idx));
+      });
+
+      selectHome.selectedIndex = 2; // Cavigal Nice
+      selectAway.selectedIndex = 0; // Billère
+
+      updateTeams();
+      setInterval(tick, 1000);
+    };
+
+    function updateTeams() {
+      const hIdx = document.getElementById('select-home').value;
+      const aIdx = document.getElementById('select-away').value;
+
+      state.homeName = CLUBS[hIdx].name;
+      state.homeLogo = CLUBS[hIdx].logo;
+      state.awayName = CLUBS[aIdx].name;
+      state.awayLogo = CLUBS[aIdx].logo;
+
+      document.getElementById('title-home').textContent = state.homeName;
+      document.getElementById('title-away').textContent = state.awayName;
+
+      sync();
+    }
+
+    /* GESTION SCORES & ANIMATION BUT AUTOMATIQUE SUR +1 */
+    function changeScore(team, val) {
+      if (team === 'home') state.homeScore = Math.max(0, state.homeScore + val);
+      if (team === 'away') state.awayScore = Math.max(0, state.awayScore + val);
+      
+      document.getElementById('ctrl-score-home').textContent = state.homeScore;
+      document.getElementById('ctrl-score-away').textContent = state.awayScore;
+
+      if (val > 0) {
+        const name = team === 'home' ? state.homeName : state.awayName;
+        const logo = team === 'home' ? state.homeLogo : state.awayLogo;
+        showModal(`BUT ! ${name}`, logo, 10000, true);
+      } else {
+        sync();
+      }
+    }
+
+    function resetScores() {
+      state.homeScore = 0;
+      state.awayScore = 0;
+      document.getElementById('ctrl-score-home').textContent = 0;
+      document.getElementById('ctrl-score-away').textContent = 0;
+      sync();
+    }
+
+    /* CHRONO */
+    function toggleChrono() {
+      state.chronoRunning = !state.chronoRunning;
+      document.getElementById('btn-start').style.background = state.chronoRunning ? "#e11d48" : "#22c55e";
+    }
+
+    function resetChrono() {
+      state.chronoSeconds = 0;
+      state.chronoRunning = false;
+      document.getElementById('btn-start').style.background = "#22c55e";
+      sync();
+    }
+
+    function setChronoTime(min, sec) {
+      state.chronoSeconds = (min * 60) + sec;
+      sync();
+    }
+
+    function applyManualTime() {
+      const min = parseInt(document.getElementById('manual-min').value) || 0;
+      const sec = parseInt(document.getElementById('manual-sec').value) || 0;
+      setChronoTime(min, Math.min(59, Math.max(0, sec)));
+    }
+
+    /* 2 MIN */
+    function add2Min(team) {
+      const inputId = team === 'home' ? 'player-home' : 'player-away';
+      const playerInput = document.getElementById(inputId);
+      const playerName = playerInput.value.trim();
+
+      const item = { 
+        id: Date.now(), 
+        seconds: 120, 
+        player: playerName !== "" ? playerName : "JOUEUR" 
+      };
+
+      if (team === 'home') state.penaltiesHome.push(item);
+      if (team === 'away') state.penaltiesAway.push(item);
+
+      playerInput.value = "";
+      sync();
+    }
+
+    function remove2Min(team, id) {
+      if (team === 'home') state.penaltiesHome = state.penaltiesHome.filter(p => p.id !== id);
+      if (team === 'away') state.penaltiesAway = state.penaltiesAway.filter(p => p.id !== id);
+      sync();
+    }
+
+    /* ANIMATIONS OVERLAY */
+    function showModal(text, logo, durationMs, isGoal = false) {
+      if (modalTimeout) clearTimeout(modalTimeout);
+      state.activeModal = { text: text, logo: logo, isGoal: isGoal };
+      sync();
+
+      if (durationMs > 0) {
+        modalTimeout = setTimeout(() => {
+          clearModal();
+        }, durationMs);
+      }
+    }
+
+    function clearModal() {
+      if (modalTimeout) clearTimeout(modalTimeout);
+      modalTimeout = null;
+      state.activeModal = null;
+      sync();
+    }
+
+    function triggerCard(team, cardType) {
+      const inputId = team === 'home' ? 'player-home' : 'player-away';
+      const playerInput = document.getElementById(inputId);
+      const playerName = playerInput.value.trim();
+      const logo = team === 'home' ? state.homeLogo : state.awayLogo;
+
+      const cardLabel = cardType === 'yellow' ? '🟨 CARTON JAUNE' : '🟥 CARTON ROUGE';
+      const textDisplay = playerName !== "" ? `${cardLabel} - ${playerName}` : cardLabel;
+
+      playerInput.value = "";
+      showModal(textDisplay, logo, 10000, false);
+    }
+
+    function triggerTimeout(team) {
+      const logo = team === 'home' ? state.homeLogo : state.awayLogo;
+      const name = team === 'home' ? state.homeName : state.awayName;
+      showModal(`TEMPS MORT - ${name}`, logo, 30000, false);
+    }
+
+    function toggleJet7m() {
+      state.jet7mActive = !state.jet7mActive;
+      document.getElementById('btn-jet7m').classList.toggle('active', state.jet7mActive);
+      sync();
+    }
+
+    function formatTime(s) {
+      const m = Math.floor(s / 60).toString().padStart(2, '0');
+      const sec = (s % 60).toString().padStart(2, '0');
+      return `${m}:${sec}`;
+    }
+
+    function tick() {
+      if (state.chronoRunning) {
+        state.chronoSeconds++;
+      }
+
+      state.penaltiesHome.forEach(p => { if (p.seconds > 0) { p.seconds--; } });
+      state.penaltiesHome = state.penaltiesHome.filter(p => p.seconds > 0);
+
+      state.penaltiesAway.forEach(p => { if (p.seconds > 0) { p.seconds--; } });
+      state.penaltiesAway = state.penaltiesAway.filter(p => p.seconds > 0);
+
+      sync();
+    }
+
+    function sync() {
+      document.getElementById('ctrl-chrono').textContent = formatTime(state.chronoSeconds);
+
+      renderControlPenalties('home', state.penaltiesHome, 'ctrl-penalties-home');
+      renderControlPenalties('away', state.penaltiesAway, 'ctrl-penalties-away');
+
+      channel.postMessage({
+        type: 'UPDATE_ALL',
+        homeName: state.homeName,
+        homeLogo: state.homeLogo,
+        awayName: state.awayName,
+        awayLogo: state.awayLogo,
+        homeScore: state.homeScore,
+        awayScore: state.awayScore,
+        chronoText: formatTime(state.chronoSeconds),
+        penaltiesHome: state.penaltiesHome.map(p => ({ id: p.id, formatted: formatTime(p.seconds), player: p.player })),
+        penaltiesAway: state.penaltiesAway.map(p => ({ id: p.id, formatted: formatTime(p.seconds), player: p.player })),
+        jet7mActive: state.jet7mActive,
+        activeModal: state.activeModal
+      });
+    }
+
+    function renderControlPenalties(team, list, elementId) {
+      const container = document.getElementById(elementId);
+      container.innerHTML = '';
+      list.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'penalty-item';
+        div.innerHTML = `<span>⏱ <b>${p.player}</b> : ${formatTime(p.seconds)}</span> <span class="btn-del" onclick="remove2Min('${team}', ${p.id})">X</span>`;
+        container.appendChild(div);
+      });
+    }
+  </script>
+</body>
+</html>
