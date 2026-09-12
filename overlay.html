@@ -229,20 +229,20 @@
       display: none;
     }
 
-    /* ANIMATION OVERLAY ET BUT */
+    /* ANIMATION OVERLAY ET BUT (REMONTÉE HAUT EN ÉCRAN) */
     .overlay-modal {
       position: absolute;
-      top: 55%;
+      top: 220px; /* REMONTÉ HAUT DE L'ÉCRAN */
       left: 50%;
       transform: translate(-50%, -50%);
       background: rgba(5, 7, 10, 0.96);
       border: 5px solid #ff0000;
       border-radius: 20px;
-      padding: 35px 70px;
+      padding: 25px 50px;
       display: none;
       flex-direction: row;
       align-items: center;
-      gap: 35px;
+      gap: 30px;
       box-shadow: 0 0 60px rgba(0,0,0,0.9);
       z-index: 100;
       transition: border-color 0.3s, box-shadow 0.3s;
@@ -258,13 +258,13 @@
     }
 
     .modal-logo {
-      width: 120px;
-      height: 120px;
+      width: 90px;
+      height: 90px;
       object-fit: contain;
     }
 
     .modal-text {
-      font-size: 60px;
+      font-size: 50px;
       font-weight: 900;
       color: #ffffff;
       text-transform: uppercase;
@@ -362,15 +362,26 @@
       if (!img) return;
 
       if (logoPath && logoPath.trim() !== '') {
-        // Encodage propre des espaces dans les chemins
         const cleanPath = encodeURI(logoPath.trim());
         
         img.onerror = function() {
+          // Gestion des cas majuscules/minuscules et extensions
+          if (!this.dataset.retry) {
+            this.dataset.retry = "1";
+            if (cleanPath.endsWith('.png')) {
+              this.src = cleanPath.replace('.png', '.PNG');
+              return;
+            } else if (cleanPath.endsWith('.PNG')) {
+              this.src = cleanPath.replace('.PNG', '.png');
+              return;
+            }
+          }
           this.style.display = 'none';
         };
 
         img.onload = function() {
           this.style.display = 'block';
+          delete this.dataset.retry;
         };
 
         img.src = cleanPath;
